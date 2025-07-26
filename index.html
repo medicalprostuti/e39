@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            'What is the correct indirect form of: He said, "You had better see a doctor"?',
+          options: {
+            a: "He advised me to see a doctor",
+            b: "He advised that he should see a doctor",
+            c: "He suggested that he had seen a doctor",
+            d: "He proposed to see a doctor",
+          },
+          correct: "a",
+          explanation:
+            "<p>Direct Speech-এ 'had better' থাকলে Indirect Speech-এ সাধারণত 'advise' Verb ব্যবহার করে 'to-infinitive' দিয়ে প্রকাশ করা হয়।<br><b>সঠিক উত্তর:</b> He advised me to see a doctor। এখানে 'advised' Verb এবং 'to see' (infinitive) ব্যবহার করে সঠিক Indirect form তৈরি করা হয়েছে।</p>",
+        },
+        {
+          id: 2,
+          question:
+            'She said, "I taught in many schools". What is the indirect speech of the sentence?',
+          options: {
+            a: "She said she had taught in many schools.",
+            b: "She said that she had taught in many schools.",
+            c: "She said that she taught in many schools.",
+            d: "She said she had education in many schools.",
+          },
+          correct: "b",
+          explanation:
+            "<p>Direct Speech-এ Reporting verb (said) Past Tense-এ থাকলে এবং Reported Speech Simple Past Tense (taught)-এ থাকলে, Indirect Speech-এ তা Past Perfect Tense (had taught)-এ পরিবর্তিত হয়।<br><b>সঠিক উত্তর:</b> She said that she had taught in many schools.। এখানে 'that' সংযোজক, Tense-এর পরিবর্তন এবং Pronoun-এর পরিবর্তন (I → she) সঠিকভাবে করা হয়েছে।</p>",
+        },
+        {
+          id: 3,
+          question:
+            'Which one is correct after change of speech of the sentence? "Karim says that he did not go".',
+          options: {
+            a: 'Karim says, "I have not gone."',
+            b: 'Karim says, "I did not go."',
+            c: 'Karim says, "He did not go."',
+            d: 'Karim says, "I do not go."',
+          },
+          correct: "b",
+          explanation:
+            "<p>Indirect Speech থেকে Direct Speech-এ রূপান্তরের সময়, Reporting verb যদি Present Tense-এ (says) থাকে, তাহলে Reported Speech-এর Tense অপরিবর্তিত থাকে। শুধু Pronoun পরিবর্তিত হয়।<br><b>সঠিক উত্তর:</b> Karim says, \"I did not go.\"। এখানে 'he' পরিবর্তিত হয়ে 'I' হয়েছে এবং Tense (Simple Past) অপরিবর্তিত আছে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            'The best indirect form of the sentence is: "Do you know the way to the zoo?" She said to Robin-',
+          options: {
+            a: "She asks Robin if he knows the way to the zoo",
+            b: "She asked Robin whether he knew the way to the zoo",
+            c: "She asked Robin whether he knows the way to the zoo",
+            d: "She ask Robin if he knew the way to the zoo",
+          },
+          correct: "b",
+          explanation:
+            "<p>Interrogative sentence-কে Indirect করার সময় 'said to' পরিবর্তিত হয়ে 'asked' হয়। Yes/No প্রশ্নের জন্য 'if' বা 'whether' বসে এবং Reported Speech-এর Tense পরিবর্তিত হয় (Simple Present → Simple Past)।<br><b>সঠিক উত্তর:</b> She asked Robin whether he knew the way to the zoo।</p>",
+        },
+        {
+          id: 5,
+          question: 'He said, "Be quiet and listen to my words."',
+          options: {
+            a: "He asked them to listen his words and be quiet",
+            b: "He urged them to be quiet and listen to his words",
+            c: "He said them to listen him and be quiet",
+            d: "He ordered them to listen his words quietly",
+          },
+          correct: "b",
+          explanation:
+            "<p>Imperative sentence-এর ভাব অনুযায়ী Reporting verb পরিবর্তিত হয়। এখানে 'urge' (জোরালো অনুরোধ) সবচেয়ে উপযুক্ত। Infinitive (to be, to listen) ব্যবহার করে বাক্যটি যুক্ত হয়।<br><b>সঠিক উত্তর:</b> He urged them to be quiet and listen to his words।</p>",
+        },
+        {
+          id: 6,
+          question: 'I said to him, "I don\'t believe you."',
+          options: {
+            a: "I said I didn't believe him.",
+            b: "I didn't believe him, I said.",
+            c: "I said that I don't believe him.",
+            d: "I said that I didn't believe him.",
+          },
+          correct: "d",
+          explanation:
+            "<p>Assertive sentence-এ 'said to' পরিবর্তিত হয়ে 'told' হতে পারে, অথবা 'said' থাকতে পারে। Tense পরিবর্তিত হয় (Simple Present → Simple Past) এবং Pronoun পরিবর্তিত হয় (you → him)।<br><b>সঠিক উত্তর:</b> I said that I didn't believe him.।</p>",
+        },
+        {
+          id: 7,
+          question: 'Which one is the correct indirect speech of "Come here"?',
+          options: {
+            a: "He ordered that I go there",
+            b: "He told come here",
+            c: "He told that I should come here",
+            d: "He told me to go there",
+          },
+          correct: "d",
+          explanation:
+            "<p>Imperative sentence-এ 'Come here' পরিবর্তিত হয়ে 'go there' হয়। বাক্যটি to-infinitive দিয়ে যুক্ত হয়।<br><b>সঠিক উত্তর:</b> He told me to go there।</p>",
+        },
+        {
+          id: 8,
+          question:
+            'The correct indirect form of this sentence- He said to me, "Are you ill?" I replied, "No". is-',
+          options: {
+            a: "He asked me if I am ill. I replied that I was not.",
+            b: "He asked me if I was ill. I replied that I was not.",
+            c: "He asked me if I would ill. I replied that I was not.",
+            d: "He asked me if I was ill. I replied that I am not.",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রথম অংশে Interrogative sentence হওয়ায় Tense পরিবর্তিত হয়ে 'was' হয়েছে। দ্বিতীয় অংশে 'No' এর উত্তর 'replied that I was not' দিয়ে প্রকাশ করা হয়েছে।<br><b>সঠিক উত্তর:</b> He asked me if I was ill. I replied that I was not.।</p>",
+        },
+        {
+          id: 9,
+          question:
+            'I said to him, "How long will you stay?" He replied, "For five days." The indirect form of the above sentence is-',
+          options: {
+            a: "I asked him how long he would stay. He replied that he would stay for five days.",
+            b: "I ask him how long he would stay. He replied that he would stay for five days.",
+            c: "I asked him how long he would stay. He reply that he would stay for five days.",
+            d: "I asked him how long he will stay. He replied that he would stay for five days.",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রথম অংশে Wh-question হওয়ায় 'will' পরিবর্তিত হয়ে 'would' হয়েছে। দ্বিতীয় অংশে উত্তরে মূল বক্তব্যকে সম্পূর্ণ বাক্যে (he would stay for five days) প্রকাশ করা হয়েছে।<br><b>সঠিক উত্তর:</b> I asked him how long he would stay. He replied that he would stay for five days.।</p>",
+        },
+        {
+          id: 10,
+          question: 'Karim said, "I cannot do it now".',
+          options: {
+            a: "Karim said that he could not do it then",
+            b: "Karim said he could not do it now",
+            c: "Karim said he can not do it now",
+            d: "Karim said he could not do it now",
+          },
+          correct: "a",
+          explanation:
+            "<p>Reporting verb 'said' Past Tense-এ থাকায়, 'can' পরিবর্তিত হয়ে 'could' এবং 'now' পরিবর্তিত হয়ে 'then' হবে।<br><b>সঠিক উত্তর:</b> Karim said that he could not do it then।</p>",
+        },
+        {
+          id: 11,
+          question: 'He said to me, "I don\'t believe you."',
+          options: {
+            a: "He said he didn't believe me.",
+            b: "He said he does not believe me.",
+            c: "He told me that he does not believe me",
+            d: "He said that he do not believe me.",
+          },
+          correct: "a",
+          explanation:
+            "<p>Tense পরিবর্তিত হবে (don't → didn't) এবং Pronoun পরিবর্তিত হবে (I → he, you → me)। 'that' সংযোজকটি উহ্য থাকতে পারে।<br><b>সঠিক উত্তর:</b> He said he didn't believe me.।</p>",
+        },
+        {
+          id: 12,
+          question:
+            'My grandfather said, "I will have a glass of milk at night."',
+          options: {
+            a: "My grandfather said that he will have a glass of milk at night.",
+            b: "My grandfather told that he can have a glass of milk at night.",
+            c: "My grandfather said that he would have a glass of milk at night.",
+            d: "My grandfather said that he might have a glass of milk at night.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Reporting verb 'said' Past Tense-এ থাকায়, 'will' পরিবর্তিত হয়ে 'would' হবে।<br><b>সঠিক উত্তর:</b> My grandfather said that he would have a glass of milk at night.।</p>",
+        },
+        {
+          id: 13,
+          question: 'She says, "I had a headache yesterday."',
+          options: {
+            a: "She said she had a headache the day before yesterday.",
+            b: "She says that she had a headache yesterday.",
+            c: "She says that she has a headache the previous day.",
+            d: "She said that she was having a headache the day before yesterday.",
+          },
+          correct: "b",
+          explanation:
+            "<p>Reporting verb 'says' Present Tense-এ থাকায় Reported Speech-এর Tense ('had') এবং Time ('yesterday')-এর কোনো পরিবর্তন হবে না।<br><b>সঠিক উত্তর:</b> She says that she had a headache yesterday.।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "The correct reported form of the sentence- He said to me, 'You will get the result of your COVID-19 test tomorrow.'",
+          options: {
+            a: "He told me that I would get the result of my COVID-19 test the next day.",
+            b: "He said I would get the result of my COVID-19 test tomorrow.",
+            c: "He told me that I get the result of my COVID-19 test the next day.",
+            d: "He told me that I will be getting the result of my COVID-19 test.",
+          },
+          correct: "a",
+          explanation:
+            "<p>Reporting verb Past Tense-এ থাকায় 'will' পরিবর্তিত হয়ে 'would' এবং 'tomorrow' পরিবর্তিত হয়ে 'the next day' হবে। Pronoun 'you' পরিবর্তিত হয়ে 'I' হবে।<br><b>সঠিক উত্তর:</b> He told me that I would get the result of my COVID-19 test the next day.।</p>",
+        },
+        {
+          id: 15,
+          question:
+            'Change into reported form: She said to me, "Why don\'t you come on Monday?"',
+          options: {
+            a: "She told me to not go on Monday.",
+            b: "She said me why did not she go on Monday.",
+            c: "She asked me why I did not go on Monday.",
+            d: "She asked me why I did not come on Monday.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Wh-question-কে Indirect করার সময় 'said to' পরিবর্তিত হয়ে 'asked' হয়। Tense পরিবর্তিত হয় (don't come → did not go)। 'Come' পরিবর্তিত হয়ে 'go' হয়।<br><b>সঠিক উত্তর:</b> She asked me why I did not go on Monday.।</p>",
+        },
+        {
+          id: 16,
+          question:
+            '"He questioned softly why I failed." Change this sentence into reported speech.',
+          options: {
+            a: 'He questioned softly, "Why did you fail"?',
+            b: 'He questioned softly, "Why did I fail"?',
+            c: "He told softly, Why have you failed",
+            d: "He told softly, Why had I failed?",
+          },
+          correct: "a",
+          explanation:
+            "<p>Indirect Speech-এ Past Indefinite (failed) থাকলে Direct Speech-এ Present Indefinite (fail) বা Past Indefinite (did you fail) হতে পারে। এখানে 'Why did you fail?' সবচেয়ে উপযুক্ত।<br><b>সঠিক উত্তর:</b> He questioned softly, \"Why did you fail\"?।</p>",
+        },
+        {
+          id: 17,
+          question:
+            'Mother said to me, "Do not tell a lie" Change into indirect narration.',
+          options: {
+            a: "Mother frightened me not to tell a lie.",
+            b: "Mother suggested me to not tell a lie.",
+            c: "Mother advised me not to tell a lie.",
+            d: "Mother warned me to not to tell a lie.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Negative Imperative sentence-কে Indirect করার সময় ভাব অনুযায়ী 'advised' বা 'ordered' বসে এবং 'not to' দিয়ে বাক্যটি যুক্ত করা হয়।<br><b>সঠিক উত্তর:</b> Mother advised me not to tell a lie.।</p>",
+        },
+        {
+          id: 18,
+          question:
+            'Choose the correct indirect speech for- I said to you, "Good Morning."',
+          options: {
+            a: "I told you that it is a good morning.",
+            b: "I wished you good morning.",
+            c: "I told you good morning.",
+            d: "I wish you good morning.",
+          },
+          correct: "b",
+          explanation:
+            "<p>শুভেচ্ছা জানানোর ক্ষেত্রে 'said to' পরিবর্তিত হয়ে 'wished' হয়।<br><b>সঠিক উত্তর:</b> I wished you good morning.।</p>",
+        },
+        {
+          id: 19,
+          question: 'You said to me, "You are right". The indirect speech is-',
+          options: {
+            a: "You told me that I was right.",
+            b: "You told me that you are right.",
+            c: "You told me that I am right.",
+            d: "You told me that I were right.",
+          },
+          correct: "a",
+          explanation:
+            "<p>Reporting verb Past Tense-এ থাকায় 'are' পরিবর্তিত হয়ে 'was' হবে এবং Pronoun 'You' পরিবর্তিত হয়ে 'I' হবে।<br><b>সঠিক উত্তর:</b> You told me that I was right.।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "Convert into indirect speech: I said to him, 'Why are you working so hard?'",
+          options: {
+            a: "I asked him why he was working so hard",
+            b: "I asked him why he had been working so hard",
+            c: "I asked him why had he been working so hard",
+            d: "I asked him why was he working so hard",
+          },
+          correct: "a",
+          explanation:
+            "<p>Wh-question-এ Reporting verb 'asked' হয়। Present Continuous Tense পরিবর্তিত হয়ে Past Continuous Tense (was working) হয়।<br><b>সঠিক উত্তর:</b> I asked him why he was working so hard।</p>",
+        },
+        {
+          id: 21,
+          question:
+            'Change the narration of-The teacher said to his students "Do not neglect your studies".',
+          options: {
+            a: "The teacher told his students not to neglect their studies.",
+            b: "The teacher ordered his students that they might not neglect their studies.",
+            c: "The teacher advised his students not to neglect their studies.",
+            d: "The teacher told his students that they should not neglect their studies.",
+          },
+          correct: "a",
+          explanation:
+            "<p>Negative Imperative sentence-এ 'said to' পরিবর্তিত হয়ে 'told', 'advised', বা 'ordered' হতে পারে। এখানে 'told' এবং 'advised' উভয়ই সঠিক, তবে প্রদত্ত উত্তর অনুযায়ী (a) সঠিক।<br><b>সঠিক উত্তর:</b> The teacher told his students not to neglect their studies.।</p>",
+        },
+        {
+          id: 22,
+          question:
+            'Anis said, "I must write a letter," The indirect speech is -',
+          options: {
+            a: "Anis said that he must write a letter.",
+            b: "Anis said he had to write a letter.",
+            c: "Anis said that he had to write a letter.",
+            d: "Anis said he must write a letter.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Reporting verb Past Tense-এ থাকায় 'must' পরিবর্তিত হয়ে 'had to' হয় যখন এটি বাধ্যবাধকতা বোঝায়।<br><b>সঠিক উত্তর:</b> Anis said that he had to write a letter.।</p>",
+        },
+        {
+          id: 23,
+          question:
+            'He said to me. "I know who killed the tiger". The correct indirect speech is -',
+          options: {
+            a: "He said to me that he know who killed the tiger",
+            b: "He told me that he had known who killed the tiger",
+            c: "He told me that he knew who killed the tiger",
+            d: "He told me that he knew who had killed the tiger",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রথম Clause 'I know' (Simple Present) পরিবর্তিত হয়ে 'he knew' (Simple Past) হবে। দ্বিতীয় Clause 'killed the tiger' (Simple Past) পরিবর্তিত হয়ে 'had killed the tiger' (Past Perfect) হবে।<br><b>সঠিক উত্তর:</b> He told me that he knew who had killed the tiger।</p>",
+        },
+        {
+          id: 24,
+          question: 'The boy said, "I am hungry" The indirect speech is:',
+          options: {
+            a: "The boy said he is hungry.",
+            b: "The boy said that he had been hungry.",
+            c: "The boy said that he was hungry.",
+            d: "The boy said that he is hungry.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Reporting verb Past Tense-এ থাকায় 'am' (Simple Present) পরিবর্তিত হয়ে 'was' (Simple Past) হবে।<br><b>সঠিক উত্তর:</b> The boy said that he was hungry.।</p>",
+        },
+        {
+          id: 25,
+          question:
+            'Father said, "Where are you going, Sara?" The correct indirect speech is-',
+          options: {
+            a: "Father said where was Sara going.",
+            b: "Father asked Sara where she is going.",
+            c: "Father asked Sara where she was going.",
+            d: "Father asked where Sara went.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Wh-question-এ 'said' পরিবর্তিত হয়ে 'asked Sara' হবে। Present Continuous Tense পরিবর্তিত হয়ে Past Continuous Tense (was going) হবে।<br><b>সঠিক উত্তর:</b> Father asked Sara where she was going.।</p>",
+        },
+        {
+          id: 26,
+          question: 'He said, "You are a fool". (Make it indirect).',
+          options: {
+            a: "He said that you are a fool.",
+            b: "He said that I was a fool.",
+            c: "He called me a fool.",
+            d: "He said that the person he was speaking to was a fool.",
+          },
+          correct: "d",
+          explanation:
+            "<p>যখন 'you' দ্বারা নির্দিষ্ট কোনো ব্যক্তিকে বোঝানো হয় না, তখন 'the person he was speaking to' ব্যবহার করা সবচেয়ে নিরপেক্ষ। Tense পরিবর্তিত হয়ে 'was' হবে।<br><b>সঠিক উত্তর:</b> He said that the person he was speaking to was a fool.।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "Choose the correct 'Indirect Speech' of the following 'Direct Speech': Are you hungry, friends? Said the Leader.",
+          options: {
+            a: "The Leader said addressing them as friends, if they were hungry.",
+            b: "Addressing them as friends the Leader asked if they were hungry.",
+            c: "Addressing them as friends the Leader said if they are hungry.",
+            d: "Approaching them as friends the Leader said if they were hungry.",
+          },
+          correct: "b",
+          explanation:
+            "<p>'friends' দ্বারা সম্বোধন করায় 'Addressing them as friends' ব্যবহার করা হয়েছে। প্রশ্ন হওয়ায় 'asked' বসেছে এবং Tense পরিবর্তিত হয়েছে।<br><b>সঠিক উত্তর:</b> Addressing them as friends the Leader asked if they were hungry.।</p>",
+        },
+        {
+          id: 28,
+          question:
+            'Select the direct form of "Mother told me that I might go with her."',
+          options: {
+            a: 'Mother said to me, "You may come with me."',
+            b: 'Mother said to me, "You may go with me."',
+            c: 'Mother told me, "You may go with me."',
+            d: "None of these.",
+          },
+          correct: "a",
+          explanation:
+            "<p>Indirect Speech-এ 'told' থাকলে Direct-এ 'said to' হয়। 'might' পরিবর্তিত হয়ে 'may' হবে এবং 'go' পরিবর্তিত হয়ে 'come' হবে।<br><b>সঠিক উত্তর:</b> Mother said to me, \"You may come with me.\"।</p>",
+        },
+        {
+          id: 29,
+          question:
+            'Select the indirect form of: Teacher said to me "Why were you not reading?"',
+          options: {
+            a: "Teacher told me why I was not reading.",
+            b: "Teacher asked me why I had not been reading.",
+            c: "Teacher asked me why we were not reading.",
+            d: "Teacher said to me why I was not reading.",
+          },
+          correct: "b",
+          explanation:
+            "<p>Wh-question-এ 'said to' পরিবর্তিত হয়ে 'asked' হয়। Past Continuous Tense পরিবর্তিত হয়ে Past Perfect Continuous Tense (had not been reading) হয়।<br><b>সঠিক উত্তর:</b> Teacher asked me why I had not been reading.।</p>",
+        },
+        {
+          id: 30,
+          question:
+            "The direct narration of the sentence 'He told me that he had killed the bird,' is -",
+          options: {
+            a: 'He asked to me, "Why did you kill the bird?"',
+            b: 'He said to me, "Why did I kill the bird?"',
+            c: 'He said to me, "He had killed the bird."',
+            d: 'He said to me, "I killed the bird."',
+          },
+          correct: "d",
+          explanation:
+            '<p>Indirect-এ Past Perfect Tense (had killed) থাকলে Direct-এ Simple Past Tense (killed) হবে।<br><b>সঠিক উত্তর:</b> He said to me, "I killed the bird."।</p>',
+        },
+        {
+          id: 31,
+          question:
+            'The correct indirect form of the sentence- "I\'ll have a cup of tea only," my father said, "because I\'m not hungry."',
+          options: {
+            a: "My father said that he will have a cup of tea only because he wasn't hungry.",
+            b: "My father said that he would have a cup of tea only because I wasn't hungry.",
+            c: "My father said that I would have a cup of tea only because I wasn't hungry.",
+            d: "My father said that he would have a cup of tea only because he wasn't hungry.",
+          },
+          correct: "d",
+          explanation:
+            "<p>উভয় Clause-এ Tense এবং Pronoun পরিবর্তিত হবে। 'will have' হবে 'would have' এবং 'I'm' হবে 'he was' (বা wasn't)।<br><b>সঠিক উত্তর:</b> My father said that he would have a cup of tea only because he wasn't hungry.।</p>",
+        },
+        {
+          id: 32,
+          question:
+            "The indirect form of- 'Could I help you, Sir?' Said the receptionist to the customer.",
+          options: {
+            a: "The receptionist asked if she could help the customer.",
+            b: "The receptionist asked the customer if they could help him/her.",
+            c: "The receptionist asked the customer if she could help him/her.",
+            d: "The receptionist said that she could help the customer.",
+          },
+          correct: "c",
+          explanation:
+            "<p>ভদ্র প্রস্তাবের ক্ষেত্রে 'said to' পরিবর্তিত হয়ে 'asked' হয়। 'Could' অপরিবর্তিত থাকে। Pronoun পরিবর্তিত হয় (I → she, you → him/her)।<br><b>সঠিক উত্তর:</b> The receptionist asked the customer if she could help him/her.।</p>",
+        },
+        {
+          id: 33,
+          question:
+            'Put the following into indirect speech- "When I got home, I found I had lost my umbrella," Laila said.',
+          options: {
+            a: "Laila said that when she had got home she found that she had lost her umbrella.",
+            b: "Laila said that when she got home she found that she had lost her umbrella.",
+            c: "Laila said when she got home she had found that she lost her umbrella.",
+            d: "Laila said when she had got home she found she lost her umbrella.",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন দুটি অতীত ঘটনা ক্রমানুসারে ঘটে, তখন Simple Past Tense অপরিবর্তিত থাকতে পারে। Past Perfect Tense (had lost) অপরিবর্তিত থাকে।<br><b>সঠিক উত্তর:</b> Laila said that when she got home she found that she had lost her umbrella.।</p>",
+        },
+        {
+          id: 34,
+          question: 'Indirect speech of - He said, "Good bye, my friend."',
+          options: {
+            a: "He bade his friend goodbye.",
+            b: "Good bye friend he said.",
+            c: "He bade friend his goodbye.",
+            d: "He said that goodbye my friend.",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিদায় জানানোর ক্ষেত্রে 'said' পরিবর্তিত হয়ে 'bade' হয়।<br><b>সঠিক উত্তর:</b> He bade his friend goodbye.।</p>",
+        },
+        {
+          id: 35,
+          question:
+            "The right direct speech of 'The teacher enquired why I had been absent from class'",
+          options: {
+            a: 'The teacher said to me, "Why are you absent from class?"',
+            b: 'The teacher said to me, "Why you have been absent from class?"',
+            c: 'The teacher said to me, "Why you been absenting from class?"',
+            d: 'The teacher said to me, "Why were you absent from class?"',
+          },
+          correct: "d",
+          explanation:
+            '<p>Indirect-এ Past Perfect (had been) থাকলে Direct-এ Simple Past (were) হবে।<br><b>সঠিক উত্তর:</b> The teacher said to me, "Why were you absent from class?"।</p>',
+        },
+        {
+          id: 36,
+          question: 'He said, "We won the game." (Indirect narration)',
+          options: {
+            a: "He said that they have won the game.",
+            b: "He said that they had been won the game.",
+            c: "He said that they had won the game.",
+            d: "He said that they would have won the game.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Simple Past Tense (won) পরিবর্তিত হয়ে Past Perfect Tense (had won) হবে।<br><b>সঠিক উত্তর:</b> He said that they had won the game.।</p>",
+        },
+        {
+          id: 37,
+          question:
+            "He wished that he might have a glass of water. (into direct narration)",
+          options: {
+            a: 'He said, "Let us have a glass of water".',
+            b: 'He says, "Let me have a glass of water".',
+            c: 'He asked, "Let me have a glass of water".',
+            d: 'He said, "Let me have a glass of water".',
+          },
+          correct: "d",
+          explanation:
+            "<p>ইচ্ছাসূচক বাক্যে 'wished that' এবং 'might have' থাকলে Direct Speech-এ 'said, \"Let me have...\"' হয়।<br><b>সঠিক উত্তর:</b> He said, \"Let me have a glass of water\".।</p>",
+        },
+        {
+          id: 38,
+          question:
+            'Change the sentence in indirect speech. He enquired, "When do you intend to pay me?"',
+          options: {
+            a: "He enquired when I intend to pay him.",
+            b: "He asked that when I wish to pay him.",
+            c: "He asked when I intended to pay him.",
+            d: "He enquired that when I wish to pay him.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Reporting Verb Past Tense-এ থাকায় Reported Speech-এর Tense পরিবর্তিত হয় (intend → intended)।<br><b>সঠিক উত্তর:</b> He asked when I intended to pay him.।</p>",
+        },
+        {
+          id: 39,
+          question:
+            'They said to me, "Who are you and what do you want here now?" The indirect form is -',
+          options: {
+            a: "They enquired me who were you and what you wanted here then",
+            b: "They enquired me who I was and what I wanted there then?",
+            c: "They enquired me who I was and what I wanted there now",
+            d: "They enquired me who I was and what I wanted there then",
+          },
+          correct: "d",
+          explanation:
+            "<p>Tense (are → was, want → wanted), Pronoun (you → I), Place (here → there) এবং Time (now → then) পরিবর্তিত হবে।<br><b>সঠিক উত্তর:</b> They enquired me who I was and what I wanted there then।</p>",
+        },
+        {
+          id: 40,
+          question:
+            'The correct indirect speech: She asked me, "Are you happy in your new job?"',
+          options: {
+            a: "She asked me if I was happy in my new job.",
+            b: "She asked me if have been happy in my new job.",
+            c: "She asked me either I am happy in my new job",
+            d: "She asked me if I had been happy in my new job",
+          },
+          correct: "a",
+          explanation:
+            "<p>Yes/No প্রশ্ন হওয়ায় 'if' বসেছে। Tense পরিবর্তিত হয়েছে (are → was) এবং Pronoun পরিবর্তিত হয়েছে (you → I, your → my)।<br><b>সঠিক উত্তর:</b> She asked me if I was happy in my new job.।</p>",
+        },
+        {
+          id: 41,
+          question:
+            'Which one in the correct indirect narration? "Why have you beaten my dog"? he said to me.',
+          options: {
+            a: "He demanded me why had I beaten his dog",
+            b: "He asked me why I have had beaten his dog",
+            c: "He enquired me why had I had beaten his dog",
+            d: "He demanded of me why I had beaten his dog",
+          },
+          correct: "d",
+          explanation:
+            "<p>Reporting verb 'demand' এর পর ব্যক্তিবাচক Object থাকলে 'of' বসে। Present Perfect Tense পরিবর্তিত হয়ে Past Perfect Tense (had beaten) হবে।<br><b>সঠিক উত্তর:</b> He demanded of me why I had beaten his dog।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
